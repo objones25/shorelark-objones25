@@ -1,5 +1,6 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { simulationService } from '../services/simulation';
+import birdImageSrc from '../assets/shorelark-bird-removebg-preview.png';
 
 interface SimulationCanvasProps {
   width: number;
@@ -11,7 +12,7 @@ interface SimulationCanvasProps {
 
 // Constants for visual representation
 const FOOD_RADIUS = 3;
-const ANIMAL_RADIUS = 5;
+const ANIMAL_RADIUS = 15;  // Increased to accommodate bird image
 const ANIMAL_VISION_LENGTH = 20;
 const ANIMAL_COLOR = '#ef4444';  // Red
 const FOOD_COLOR = '#22c55e';    // Green
@@ -26,6 +27,16 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>(0);
+  const [birdImage, setBirdImage] = useState<HTMLImageElement | null>(null);
+  
+  // Load the bird image
+  useEffect(() => {
+    const img = new Image();
+    img.src = birdImageSrc;
+    img.onload = () => {
+      setBirdImage(img);
+    };
+  }, []);
 
   // Main animation loop
   useEffect(() => {
@@ -63,7 +74,7 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     if (!ctx) return;
 
     renderWorld(ctx);
-  }, [width, height]);
+  }, [width, height, birdImage]);
 
   // Render the world state to the canvas
   const renderWorld = (ctx: CanvasRenderingContext2D) => {
@@ -105,22 +116,42 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
         ctx.fill();
       }
 
-      // Animal body
-      ctx.fillStyle = ANIMAL_COLOR;
-      ctx.beginPath();
-      ctx.arc(animal.x, animal.y, ANIMAL_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
+      // Draw the bird image or fallback to a circle if image not loaded
+      if (birdImage) {
+        const size = ANIMAL_RADIUS * 2;
+        
+        // Save the current context state
+        ctx.save();
+        
+        // Translate to the bird's position
+        ctx.translate(animal.x, animal.y);
+        
+        // Rotate the context to match the bird's direction
+        ctx.rotate(animal.rotation);
+        
+        // Draw the image centered on the bird's position
+        ctx.drawImage(birdImage, -size/2, -size/2, size, size);
+        
+        // Restore the context
+        ctx.restore();
+      } else {
+        // Fallback to drawing a circle if image not loaded
+        ctx.fillStyle = ANIMAL_COLOR;
+        ctx.beginPath();
+        ctx.arc(animal.x, animal.y, ANIMAL_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Direction indicator
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(animal.x, animal.y);
-      ctx.lineTo(
-        animal.x + Math.cos(animal.rotation) * ANIMAL_RADIUS,
-        animal.y + Math.sin(animal.rotation) * ANIMAL_RADIUS
-      );
-      ctx.stroke();
+        // Direction indicator
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(animal.x, animal.y);
+        ctx.lineTo(
+          animal.x + Math.cos(animal.rotation) * ANIMAL_RADIUS,
+          animal.y + Math.sin(animal.rotation) * ANIMAL_RADIUS
+        );
+        ctx.stroke();
+      }
     }
   };
 

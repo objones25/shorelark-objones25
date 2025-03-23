@@ -55,17 +55,17 @@ function App() {
 
   return (
     <WasmLoader onLoaded={handleWasmLoaded}>
-      <div className="min-h-screen bg-[color:var(--color-background)] p-6">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold text-center">Shorelark Simulation</h1>
-          <p className="text-center text-gray-600 mt-2">
+      <div className="min-h-screen p-6">
+        <header className="mb-6 bg-black/50 p-4 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold text-center text-white">Shorelark Simulation</h1>
+          <p className="text-center text-gray-200 mt-2">
             Artificial evolution simulation powered by neural networks and genetic algorithms
           </p>
         </header>
 
         <main className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {/* Control Panel */}
-          <div className="lg:col-span-1 h-[500px]">
+          <div className="lg:col-span-1 h-[500px] bg-white/90 rounded-lg shadow-lg p-4">
             <ControlPanel
               isRunning={isRunning}
               speed={speed}
@@ -81,7 +81,7 @@ function App() {
           </div>
 
           {/* Simulation Canvas */}
-          <div className="lg:col-span-2 h-[500px]">
+          <div className="lg:col-span-2 h-[500px] bg-white/75 rounded-lg shadow-lg p-4">
             <SimulationCanvas
               width={800}
               height={500}
@@ -92,7 +92,7 @@ function App() {
           </div>
 
           {/* Stats Panel */}
-          <div className="lg:col-span-1 h-[500px]">
+          <div className="lg:col-span-1 h-[500px] bg-white/90 rounded-lg shadow-lg p-4">
             <StatsPanel
               isRunning={isRunning}
               generation={generation}
@@ -101,7 +101,7 @@ function App() {
           </div>
         </main>
 
-        <footer className="mt-8 text-center text-sm text-gray-500">
+        <footer className="mt-8 text-center text-sm bg-black/50 p-4 rounded-lg shadow-lg text-white">
           <p>Based on the original Shorelark by Patryk Wychowaniec</p>
           <p>Powered by Rust, WebAssembly, React, and TypeScript</p>
         </footer>
