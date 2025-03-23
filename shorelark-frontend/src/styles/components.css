@@ -1,0 +1,42 @@
+@layer components {
+  .canvas-container {
+    @apply relative w-full h-full rounded-md overflow-hidden bg-[color:var(--color-surface)] border border-[color:var(--color-border)];
+  }
+
+  .control-panel {
+    @apply bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-md shadow-sm p-4;
+  }
+
+  .terminal {
+    @apply font-mono text-sm bg-gray-900 text-white p-4 rounded-md shadow-inner overflow-y-auto max-h-full;
+  }
+
+  .terminal-line {
+    @apply block mb-1;
+  }
+
+  .stats-panel {
+    @apply bg-[color:var(--color-surface)] border border-[color:var(--color-border)] rounded-md shadow-sm p-4;
+  }
+
+  /* Form Elements */
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md text-white font-medium focus:outline-none transition-colors;
+  }
+
+  .btn-primary {
+    @apply bg-[color:var(--color-primary)] hover:bg-[color:var(--color-primary-dark)];
+  }
+
+  .btn-secondary {
+    @apply bg-gray-500 hover:bg-gray-600;
+  }
+
+  .btn-sm {
+    @apply px-2 py-1 text-sm;
+  }
+} 
