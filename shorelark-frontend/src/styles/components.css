@@ -8,11 +8,16 @@
   }
 
   .terminal {
-    @apply font-mono text-sm bg-gray-900 text-white p-4 rounded-md shadow-inner overflow-y-auto max-h-full;
+    @apply font-mono text-sm bg-gray-900 text-white p-4 rounded-md shadow-inner overflow-y-auto;
+    height: 200px;
+    max-height: 200px;
+    scroll-behavior: smooth;
   }
 
   .terminal-line {
     @apply block mb-1;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .stats-panel {

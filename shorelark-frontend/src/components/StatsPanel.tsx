@@ -1,117 +1,156 @@
-import { useEffect, useState } from 'react';
-import { simulationService } from '../services/simulation';
+import React, { useState, useEffect } from 'react';
 
 interface StatsPanelProps {
   isRunning: boolean;
   generation: number;
+  autoTrain?: boolean;
 }
 
-interface Stats {
-  animalCount: number;
-  foodCount: number;
+// Mock data for the statistics chart
+interface StatPoint {
+  generation: number;
   avgFitness: number;
-  bestFitness: number;
-  worstFitness: number;
+  maxFitness: number;
+  minFitness: number;
 }
 
-const StatsPanel: React.FC<StatsPanelProps> = ({ isRunning, generation }) => {
-  const [stats, setStats] = useState<Stats>({
-    animalCount: 0,
-    foodCount: 0,
-    avgFitness: 0,
-    bestFitness: 0,
-    worstFitness: 0,
-  });
+const StatsPanel: React.FC<StatsPanelProps> = ({ 
+  isRunning, 
+  generation,
+  autoTrain = false
+}) => {
+  const [stats, setStats] = useState<StatPoint[]>([]);
 
-  const [generationHistory, setGenerationHistory] = useState<number[]>([]);
-  const [fitnessHistory, setFitnessHistory] = useState<number[]>([]);
-
-  // Update stats when running or when generation changes
+  // Generate some mock statistics data whenever the generation changes
   useEffect(() => {
-    const updateStats = () => {
-      const world = simulationService.getWorld();
-      if (!world) return;
-
-      // Calculate stats from world data
-      const animalCount = world.animals.length;
-      const foodCount = world.food.length;
+    // Only add data points when we have a new generation
+    if (generation > 0 && (stats.length === 0 || stats[stats.length - 1].generation !== generation)) {
+      const lastAvg = stats.length > 0 ? stats[stats.length - 1].avgFitness : 10;
+      const lastMax = stats.length > 0 ? stats[stats.length - 1].maxFitness : 15;
       
-      // In a real implementation, these would come from the WASM module
-      const avgFitness = Math.random() * 100;
-      const bestFitness = avgFitness + Math.random() * 50;
-      const worstFitness = avgFitness - Math.random() * 50;
-
-      setStats({
-        animalCount,
-        foodCount,
-        avgFitness,
-        bestFitness,
-        worstFitness,
-      });
-    };
-
-    updateStats();
-
-    // Set up interval if simulation is running
-    let interval: number | undefined;
-    if (isRunning) {
-      interval = window.setInterval(updateStats, 500);
+      // Generate new point with slight randomness but overall upward trend
+      const newPoint: StatPoint = {
+        generation,
+        avgFitness: Math.max(0, lastAvg + (Math.random() * 5 - 2)),
+        maxFitness: Math.max(lastAvg, lastMax + (Math.random() * 4 - 1)),
+        minFitness: Math.max(0, lastAvg - (5 + Math.random() * 3)),
+      };
+      
+      setStats(prevStats => [...prevStats, newPoint]);
     }
+  }, [generation, stats]);
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRunning, generation]);
+  // Format fitness value with 2 decimal places
+  const formatFitness = (value: number): string => {
+    return value.toFixed(2);
+  };
 
-  // Update history when generation changes
-  useEffect(() => {
-    if (generation > 0) {
-      setGenerationHistory(prev => [...prev, generation]);
-      setFitnessHistory(prev => [...prev, stats.avgFitness]);
-    }
-  }, [generation]);
+  // Get current stats
+  const currentStats = stats.length > 0 ? stats[stats.length - 1] : {
+    generation: 0,
+    avgFitness: 0,
+    maxFitness: 0,
+    minFitness: 0,
+  };
 
-  const StatItem = ({ label, value }: { label: string; value: number | string }) => (
-    <div className="flex justify-between items-center border-b border-gray-200 py-2">
-      <span className="text-sm font-medium text-gray-600">{label}</span>
-      <span className="text-sm font-bold">{value}</span>
-    </div>
-  );
+  // Calculate improvement from previous generation
+  const prevStats = stats.length > 1 ? stats[stats.length - 2] : currentStats;
+  const avgImprovement = currentStats.avgFitness - prevStats.avgFitness;
+  
+  // Get improvement trend (↑, ↓, or →)
+  const getImprovementTrend = (current: number, previous: number): string => {
+    const diff = current - previous;
+    if (Math.abs(diff) < 0.01) return '→';
+    return diff > 0 ? '↑' : '↓';
+  };
+
+  // Render a simple bar chart of fitness by generation
+  const renderChart = () => {
+    if (stats.length === 0) return null;
+    
+    const maxValue = Math.max(...stats.map(s => s.maxFitness)) * 1.1; // Add 10% margin
+    
+    return (
+      <div className="chart mt-4 h-[200px] flex items-end">
+        {stats.map((point, index) => (
+          <div key={index} className="bar-group relative flex-1 flex items-end h-full">
+            {/* Max fitness */}
+            <div 
+              className="bar max-bar w-[70%] mx-auto bg-blue-500 rounded-t"
+              style={{ height: `${(point.maxFitness / maxValue) * 100}%` }}
+            />
+            
+            {/* Average fitness */}
+            <div 
+              className="bar avg-bar absolute w-[70%] left-[15%] mx-auto bg-green-500 rounded-t"
+              style={{ 
+                height: `${(point.avgFitness / maxValue) * 100}%`,
+                bottom: 0
+              }}
+            />
+            
+            {/* Min fitness */}
+            <div 
+              className="bar min-bar absolute w-[70%] left-[15%] mx-auto bg-red-500 rounded-t"
+              style={{ 
+                height: `${(point.minFitness / maxValue) * 100}%`,
+                bottom: 0
+              }}
+            />
+            
+            {/* Generation label (only show for even generations to avoid crowding) */}
+            {index % 2 === 0 && (
+              <div className="generation-label absolute bottom-[-20px] text-xs w-full text-center">
+                {point.generation}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="stats-panel h-full flex flex-col">
-      <h2 className="text-xl font-bold mb-4">Statistics</h2>
+    <div className="stats-panel p-4 bg-white rounded-lg shadow h-full flex flex-col">
+      <h2 className="text-xl font-bold mb-2">Statistics</h2>
       
-      <div className="space-y-1">
-        <StatItem label="Generation" value={generation} />
-        <StatItem label="Animals" value={stats.animalCount} />
-        <StatItem label="Food" value={stats.foodCount} />
-        <StatItem label="Average Fitness" value={stats.avgFitness.toFixed(2)} />
-        <StatItem label="Best Fitness" value={stats.bestFitness.toFixed(2)} />
-        <StatItem label="Worst Fitness" value={stats.worstFitness.toFixed(2)} />
-      </div>
-      
-      {generationHistory.length > 0 && (
-        <div className="mt-6 flex-grow">
-          <h3 className="text-lg font-medium mb-2">Fitness History</h3>
-          <div className="h-48 bg-gray-100 rounded-md p-2 relative">
-            {/* Simple bar chart visualization */}
-            <div className="absolute inset-0 flex items-end justify-around p-2">
-              {fitnessHistory.map((fitness, index) => {
-                const height = `${(fitness / 150) * 100}%`;
-                return (
-                  <div 
-                    key={index} 
-                    className="bg-blue-500 w-4 mx-1 rounded-t"
-                    style={{ height }}
-                    title={`Gen ${generationHistory[index]}: ${fitness.toFixed(2)}`}
-                  />
-                );
-              })}
-            </div>
+      <div className="stats-grid grid grid-cols-2 gap-4">
+        <div className="stat-card p-3 bg-gray-50 rounded">
+          <h3 className="text-sm text-gray-500">Generation</h3>
+          <p className="text-2xl font-bold">{generation}</p>
+          <div className="text-xs text-gray-500 mt-1">
+            {autoTrain ? 'Auto-training enabled' : 'Manual training'}
           </div>
         </div>
-      )}
+        
+        <div className="stat-card p-3 bg-gray-50 rounded">
+          <h3 className="text-sm text-gray-500">Status</h3>
+          <p className="text-xl font-bold">{isRunning ? 'Running' : 'Paused'}</p>
+          <div className={`text-xs ${isRunning ? 'text-green-500' : 'text-gray-500'} mt-1`}>
+            {isRunning ? 'Simulation active' : 'Waiting for input'}
+          </div>
+        </div>
+        
+        <div className="stat-card p-3 bg-gray-50 rounded">
+          <h3 className="text-sm text-gray-500">Avg Fitness</h3>
+          <p className="text-xl font-bold">{formatFitness(currentStats.avgFitness)}</p>
+          <div className={`text-xs ${avgImprovement >= 0 ? 'text-green-500' : 'text-red-500'} mt-1`}>
+            {getImprovementTrend(currentStats.avgFitness, prevStats.avgFitness)}{' '}
+            {formatFitness(Math.abs(avgImprovement))}
+          </div>
+        </div>
+        
+        <div className="stat-card p-3 bg-gray-50 rounded">
+          <h3 className="text-sm text-gray-500">Max Fitness</h3>
+          <p className="text-xl font-bold">{formatFitness(currentStats.maxFitness)}</p>
+          <div className={`text-xs ${(currentStats.maxFitness - prevStats.maxFitness) >= 0 ? 'text-green-500' : 'text-red-500'} mt-1`}>
+            {getImprovementTrend(currentStats.maxFitness, prevStats.maxFitness)}{' '}
+            {formatFitness(Math.abs(currentStats.maxFitness - prevStats.maxFitness))}
+          </div>
+        </div>
+      </div>
+      
+      {renderChart()}
     </div>
   );
 };

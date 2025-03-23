@@ -6,6 +6,7 @@ interface SimulationCanvasProps {
   height: number;
   isRunning: boolean;
   speed: number;
+  onSimulationStep?: () => void;
 }
 
 // Constants for visual representation
@@ -16,7 +17,13 @@ const ANIMAL_COLOR = '#ef4444';  // Red
 const FOOD_COLOR = '#22c55e';    // Green
 const VISION_COLOR = 'rgba(59, 130, 246, 0.5)';  // Blue, semi-transparent
 
-const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ width, height, isRunning, speed }) => {
+const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ 
+  width, 
+  height, 
+  isRunning, 
+  speed,
+  onSimulationStep 
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>(0);
 
@@ -33,6 +40,9 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ width, height, isRu
     const renderFrame = (timestamp: number) => {
       if (timestamp - lastTime >= frameDelay) {
         simulationService.step();
+        if (onSimulationStep) {
+          onSimulationStep();
+        }
         renderWorld(ctx);
         lastTime = timestamp;
       }
@@ -45,7 +55,7 @@ const SimulationCanvas: React.FC<SimulationCanvasProps> = ({ width, height, isRu
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [isRunning, speed]);
+  }, [isRunning, speed, onSimulationStep]);
 
   // Initial render and resize handling
   useEffect(() => {
